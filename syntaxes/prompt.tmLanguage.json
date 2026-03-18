@@ -26,6 +26,28 @@
       "contentName": "source.yaml",
       "patterns": [
         {
+          "match": "\\b(description):\\s*(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.other.json.description.prompt"
+            },
+            "2": {
+              "name": "comment.block.documentation.prompt"
+            }
+          }
+        },
+        {
+          "begin": "\"description\":\\s*\"",
+          "end": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.other.json.description.prompt"
+            }
+          },
+          "contentName": "string.quoted.double.description.prompt",
+          "name": "comment.block.documentation.prompt"
+        },
+        {
           "match": "^\\s*(enum):\\s*(\\[.*?\\])\\s*(,.*)?$",
           "captures": {
             "1": {
@@ -61,28 +83,6 @@
               "name": "comment.line.prompt"
             }
           }
-        },
-        {
-          "match": "\\b(description):\\s*(.*)$",
-          "captures": {
-            "1": {
-              "name": "keyword.other.json.description.prompt"
-            },
-            "2": {
-              "name": "comment.block.documentation.prompt"
-            }
-          }
-        },
-        {
-          "begin": "\"description\":\\s*\"",
-          "end": "\"",
-          "beginCaptures": {
-            "0": {
-              "name": "keyword.other.json.description.prompt"
-            }
-          },
-          "contentName": "string.quoted.double.description.prompt",
-          "name": "comment.block.documentation.prompt"
         },
         {
           "include": "source.yaml"

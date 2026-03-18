@@ -2,13 +2,17 @@
 model: googleai/gemini-2.0-flash
 input:
   schema:
-    blog_title: string, the title of the post
+    blog_title: string, the primary title of the post
     author_name: string
-    tags(array): string
+    tags(array): string, list of relevant tags
     is_published?: boolean, defaults to false
     metadata:
       word_count_target: integer
-      seo_keywords(array): string
+      seo_keywords(array): string, high-value SEO terms
+      category(enum): [TECH, LIFESTYLE, BUSINESS]
+    config(object):
+      temperature: number
+      max_tokens: integer
 ---
 # Blog Post Generation
 
@@ -18,13 +22,26 @@ Write a detailed blog post titled "{{blog_title}}" by {{author_name}}.
   The blog post should be centered around the theme of "{{blog_title}}".
 {{/if}}
 
-
 Target Word Count: {{metadata.word_count_target}}
+Post Category: {{metadata.category}}
 
-The SEO strategy should focus on: {{metadata.word_count_target}}
+The SEO strategy should focus on: {{metadata.seo_keywords}}
 
 {{#each metadata.seo_keywords}}
 - Use keyword: {{this}}
 {{/each}}
 
-Published Status: {{is_published}}
+{{#if is_published}}
+Status: Public
+{{else}}
+Status: Draft
+{{/if}}
+
+## Tags
+{{#each tags}}
+#{{this}} 
+{{/each}}
+
+-- System Params --
+Temp: {{config.temperature}}
+Max: {{config.max_tokens}}
