@@ -11,6 +11,12 @@
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
+  "repository": "https://github.com/YoungMayor/promptsense",
+  "author": {
+    "name": "Aghogho Meyoron",
+    "email": "youngmayor.dev@gmail.com",
+    "url": "https://aghogho.mayrlabs.com"
+  },
   "contributes": {
     "languages": [
       {
@@ -72,5 +78,6 @@
   },
   "dependencies": {
     "yaml": "^2.8.2"
-  }
+  },
+  "license": "MIT"
 }
