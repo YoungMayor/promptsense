@@ -42,7 +42,7 @@ export class PromptHoverProvider implements vscode.HoverProvider {
     // Variable hovers in template
     if (parsed.templateRange && line >= parsed.templateRange.startLine) {
       const lineText = document.lineAt(line).text;
-      
+
       // Better token identification: only match within {{ ... }}
       const match = lineText.match(/\{\{.*?\}\}/g);
       if (!match) {
@@ -55,9 +55,12 @@ export class PromptHoverProvider implements vscode.HoverProvider {
         const end = start + m.length;
         if (position.character >= start && position.character <= end) {
           // Inside an expression, extract the specific word under cursor
-          const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z0-9_.-]+/);
+          const wordRange = document.getWordRangeAtPosition(
+            position,
+            /[a-zA-Z0-9_.-]+/,
+          );
           if (wordRange) {
-             foundToken = document.getText(wordRange);
+            foundToken = document.getText(wordRange);
           }
           break;
         }
@@ -84,27 +87,27 @@ function resolveSchemaField(schema: any, path: string): any {
   if (!schema || !path) {
     return undefined;
   }
-  
+
   const parts = path.split(".");
   let current = schema;
-  
+
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     const field = current[part];
     if (!field) {
       return undefined;
     }
-    
+
     if (i === parts.length - 1) {
       return field;
     }
-    
+
     if (field.subFields) {
       current = field.subFields;
     } else {
       return undefined;
     }
   }
-  
+
   return undefined;
 }

@@ -66,13 +66,16 @@ export function parsePrompt(content: string): ParsedPrompt {
 
   try {
     result.config = yaml.parse(yamlContent) || {};
-    
+
     // Resolve Schema if present in input
     if (result.config.input?.schema) {
       const schemaInput = result.config.input.schema;
-      
+
       // JSON Schema usually has 'type: object' at root or 'properties'
-      if (typeof schemaInput === "object" && (schemaInput.type === "object" || schemaInput.properties)) {
+      if (
+        typeof schemaInput === "object" &&
+        (schemaInput.type === "object" || schemaInput.properties)
+      ) {
         result.resolvedSchema = parseJsonSchema(schemaInput);
       } else if (typeof schemaInput === "object") {
         // Fallback to Picoschema for other object shapes

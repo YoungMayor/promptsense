@@ -21,7 +21,7 @@ export function parsePicoschema(input: any): ResolvedSchema {
 
   for (const [key, value] of Object.entries(input)) {
     const { cleanKey, optional, isCollection: keyIsCollection } = parseKey(key);
-    
+
     if (typeof value === "string") {
       const field = parseStringDefinition(value, optional);
       if (keyIsCollection) {
@@ -29,8 +29,9 @@ export function parsePicoschema(input: any): ResolvedSchema {
       }
       schema[cleanKey] = field;
     } else if (typeof value === "object" && value !== null) {
-      const { type, isCollection, cleanTypeKey } = parseCollectionType(cleanKey);
-      
+      const { type, isCollection, cleanTypeKey } =
+        parseCollectionType(cleanKey);
+
       schema[cleanTypeKey] = {
         type: type,
         optional: optional || cleanKey.endsWith("?"),
@@ -43,7 +44,11 @@ export function parsePicoschema(input: any): ResolvedSchema {
   return schema;
 }
 
-function parseKey(key: string): { cleanKey: string; optional: boolean; isCollection: boolean } {
+function parseKey(key: string): {
+  cleanKey: string;
+  optional: boolean;
+  isCollection: boolean;
+} {
   let cleanKey = key;
   let optional = false;
   let isCollection = false;
@@ -63,15 +68,23 @@ function parseKey(key: string): { cleanKey: string; optional: boolean; isCollect
   return { cleanKey, optional, isCollection };
 }
 
-function parseCollectionType(key: string): { type: string; isCollection: boolean; cleanTypeKey: string } {
+function parseCollectionType(key: string): {
+  type: string;
+  isCollection: boolean;
+  cleanTypeKey: string;
+} {
   const arrayMatch = key.match(/(.*)\(array\)$/);
   if (arrayMatch) {
     return { type: "array", isCollection: true, cleanTypeKey: arrayMatch[1] };
   }
-  
+
   const objectMatch = key.match(/(.*)\(object\)$/);
   if (objectMatch) {
-    return { type: "object", isCollection: false, cleanTypeKey: objectMatch[1] };
+    return {
+      type: "object",
+      isCollection: false,
+      cleanTypeKey: objectMatch[1],
+    };
   }
 
   return { type: "object", isCollection: false, cleanTypeKey: key };
@@ -79,7 +92,7 @@ function parseCollectionType(key: string): { type: string; isCollection: boolean
 
 function parseStringDefinition(def: string, optional: boolean): SchemaField {
   // Pattern: "type, description"
-  const parts = def.split(",").map(p => p.trim());
+  const parts = def.split(",").map((p) => p.trim());
   const typePart = parts[0];
   const description = parts.length > 1 ? parts.slice(1).join(", ") : undefined;
 
@@ -91,7 +104,7 @@ function parseStringDefinition(def: string, optional: boolean): SchemaField {
       optional,
       isCollection: false,
       description,
-      enumValues: enumMatch[1].split(",").map(e => e.trim()),
+      enumValues: enumMatch[1].split(",").map((e) => e.trim()),
     };
   }
 
