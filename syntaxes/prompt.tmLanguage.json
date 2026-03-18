@@ -6,7 +6,7 @@
       "include": "#frontmatter"
     },
     {
-      "include": "#body"
+      "include": "#template"
     }
   ],
   "repository": {
@@ -30,23 +30,115 @@
         }
       ]
     },
-    "body": {
+    "template": {
       "patterns": [
         {
-          "include": "#variables"
+          "include": "#comments"
+        },
+        {
+          "include": "#tags"
         }
       ]
     },
-    "variables": {
-      "match": "\\{\\{([a-zA-Z0-9_]+)\\}\\}",
+    "comments": {
+      "begin": "\\{\\{!--",
+      "end": "--\\}\\}",
+      "name": "comment.block.prompt",
       "captures": {
         "0": {
-          "name": "variable.other.prompt"
-        },
-        "1": {
-          "name": "variable.name.prompt"
+          "name": "punctuation.definition.comment.prompt"
         }
       }
+    },
+    "tags": {
+      "begin": "\\{\\{",
+      "end": "\\}\\}",
+      "name": "entity.name.tag.prompt",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.begin.prompt"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.end.prompt"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expressions"
+        }
+      ]
+    },
+    "expressions": {
+      "patterns": [
+        {
+          "match": "#(if|unless|each|prompt|role|exec|ask|cat|tail|head|env|media)\\b",
+          "name": "keyword.control.prompt"
+        },
+        {
+          "match": "/(if|unless|each)\\b",
+          "name": "keyword.control.prompt"
+        },
+        {
+          "match": "\\b(else|as|this)\\b",
+          "name": "keyword.control.prompt"
+        },
+        {
+          "match": "\\b(eq|ne|gt|gte|lt|lte|and|or|not|concat|exec|ask|cat|tail|head|env|role|media|prompt)\\b",
+          "name": "support.function.prompt"
+        },
+        {
+          "include": "#strings"
+        },
+        {
+          "include": "#subexpressions"
+        },
+        {
+          "match": "\\b[a-zA-Z0-9_-]+(?==)",
+          "name": "variable.parameter.prompt"
+        },
+        {
+          "match": "[a-zA-Z0-9/._-]+",
+          "name": "variable.other.prompt"
+        }
+      ]
+    },
+    "subexpressions": {
+      "begin": "\\(",
+      "end": "\\)",
+      "name": "meta.subexpression.prompt",
+      "patterns": [
+        {
+          "include": "#expressions"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.prompt",
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.prompt"
+            }
+          ]
+        },
+        {
+          "begin": "'",
+          "end": "'",
+          "name": "string.quoted.single.prompt",
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.prompt"
+            }
+          ]
+        }
+      ]
     }
   }
 }

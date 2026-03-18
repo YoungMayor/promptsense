@@ -38,7 +38,20 @@ export function parsePrompt(content: string): PromptDocument {
 function extractVariables(template: string): string[] {
   const variables = new Set<string>();
 
-  for (const match of template.matchAll(/\{\{([a-zA-Z0-9_]+)\}\}/g)) {
+  // Extract regular variables {{var}}
+  for (const match of template.matchAll(/\{\{([a-zA-Z0-9_.-]+)\}\}/g)) {
+    const name = match[1];
+    if (
+      !name.startsWith("#") &&
+      !name.startsWith("/") &&
+      !name.startsWith(">")
+    ) {
+      variables.add(name);
+    }
+  }
+
+  // Extract from block tags {{#if var}}
+  for (const match of template.matchAll(/\{\{#[a-z]+\s+([a-zA-Z0-9_.-]+)/g)) {
     variables.add(match[1]);
   }
 
