@@ -1,0 +1,16 @@
+---
+model: openai/gpt-4o
+output:
+  schema: RestaurantMenuSchema
+---
+# Menu Recommender
+
+Given the following customer preferences:
+{{preferences}}
+
+Recommend 3 items from the {{restaurant_name}} menu that match the RestaurantMenuSchema.
+Each item should include:
+- Name
+- Description
+- Price (must be a number)
+- Allergen info (must be an array)

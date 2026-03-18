@@ -1,0 +1,45 @@
+---
+model: anthropic/claude-3-opus
+input:
+  schema: ResearchInput
+config:
+  temperature: 0.7
+  max_tokens: 4000
+---
+# 🔬 Detailed Research Report: {{topic}}
+
+## Executive Summary
+Generated for: {{user_organization}}
+Principal Researcher: {{researcher_id}}
+
+## Introduction
+The current state of {{topic}} is characterized by several key trends...
+
+## Analysis
+Using the data provided for {{fiscal_year}}, we observe the following:
+
+{{raw_data_summary}}
+
+### Key Performance Indicators (KPIs)
+- Growth Rate: {{kpi_growth_rate}}%
+- Market Share: {{kpi_market_share}}%
+- Churn: {{kpi_churn}}
+
+## Deep Dive: {{subtopic_1}}
+{{subtopic_1_description}}
+
+## Deep Dive: {{subtopic_2}}
+{{subtopic_2_description}}
+
+---
+
+> [!NOTE]
+> This report was generated on {{generation_date}} using the {{model}} configuration.
+
+## Recommendations
+Based on the analysis, we recommend:
+1. {{rec_1}}
+2. {{rec_2}}
+3. {{rec_3}}
+
+Contact {{contact_email}} for further details.

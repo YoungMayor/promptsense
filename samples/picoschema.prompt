@@ -1,0 +1,22 @@
+---
+model: googleai/gemini-2.0-flash
+input:
+  schema:
+    blog_title: string, the title of the post
+    author_name: string
+    tags(array): string
+    is_published?: boolean, defaults to false
+    metadata(object):
+      seo_keywords(array): string
+      word_count_target: integer
+---
+# Blog Post Generator
+
+Write a detailed blog post titled "{{blog_title}}" by {{author_name}}.
+
+Key Tags: {{tags}}
+Target Word Count: {{word_count_target}}
+
+The SEO strategy should focus on: {{seo_keywords}}
+
+Is this a published version? {{is_published}}
