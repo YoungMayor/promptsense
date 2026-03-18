@@ -1,0 +1,8 @@
+---
+model: gemini-2.0-flash
+input:
+  schema: UserProfile
+---
+Hello {{name}}, welcome to PromptSense!
+This is a test of the Phase 1 implementation.
+Your age is {{age}}.

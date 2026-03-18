@@ -1,0 +1,52 @@
+{
+  "name": "PromptSense",
+  "scopeName": "source.prompt",
+  "patterns": [
+    {
+      "include": "#frontmatter"
+    },
+    {
+      "include": "#body"
+    }
+  ],
+  "repository": {
+    "frontmatter": {
+      "begin": "^(---\\s*)$",
+      "end": "^(---\\s*)$",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.prompt"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.prompt"
+        }
+      },
+      "contentName": "source.yaml",
+      "patterns": [
+        {
+          "include": "source.yaml"
+        }
+      ]
+    },
+    "body": {
+      "patterns": [
+        {
+          "include": "#variables"
+        }
+      ]
+    },
+    "variables": {
+      "match": "\\{\\{([a-zA-Z0-9_]+)\\}\\}",
+      "captures": {
+        "0": {
+          "name": "variable.other.prompt"
+        },
+        "1": {
+          "name": "variable.name.prompt"
+        }
+      }
+    }
+  }
+}
