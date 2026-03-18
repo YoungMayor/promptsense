@@ -3,6 +3,11 @@ import { parsePrompt } from "./parser";
 
 export const DIAGNOSTIC_SOURCE = "PromptSense";
 
+const BUILT_IN_HELPERS = new Set([
+  "if", "else", "unless", "each", "and", "or", "not", "eq", "ne", "gt", "gte", "lt", "lte",
+  "concat", "exec", "ask", "cat", "tail", "head", "env", "role", "media"
+]);
+
 export function refreshDiagnostics(
   document: vscode.TextDocument,
   collection: vscode.DiagnosticCollection,
@@ -52,27 +57,28 @@ export function refreshDiagnostics(
 
   // 3. Validate variables against schema
   if (parsed.resolvedSchema) {
-    // Extract variables with dots and handle `#each` scopes
     const varUsages = extractVariableUsages(content, parsed.templateRange?.startLine || 0);
 
     for (const usage of varUsages) {
       const field = resolveSchemaPath(parsed.resolvedSchema, usage.path);
       
-      if (!field && !usage.isInEachScope) {
-         diagnostics.push(
-           new vscode.Diagnostic(
-             usage.range,
-             `Variable '${usage.path}' is not defined in the schema.`,
-             vscode.DiagnosticSeverity.Warning
-           )
-         );
-      } else if (field) {
+      if (!field) {
+        if (!usage.isInEachScope) {
+           diagnostics.push(
+             new vscode.Diagnostic(
+               usage.range,
+               `Variable '${usage.path}' is not defined in the schema.`,
+               vscode.DiagnosticSeverity.Error
+             )
+           );
+        }
+      } else {
         // Validation: Array used without #each
         if (field.isCollection && !usage.isUsedInEachHead && !usage.isInEachScope) {
            diagnostics.push(
              new vscode.Diagnostic(
                usage.range,
-               `Variable '${usage.path}' is an array. Use '{{#each ${usage.path}}}' to iterate over it instead of direct interpolation.`,
+               `Type Mismatch: '${usage.path}' is an array (collection). Direct interpolation is not supported. Use '{{#each ${usage.path}}} ... {{/each}}' to iterate over its items.`,
                vscode.DiagnosticSeverity.Error
              )
            );
@@ -99,37 +105,57 @@ function extractVariableUsages(content: string, templateStartLine: number): Vari
   for (let i = templateStartLine; i < lines.length; i++) {
     const lineText = lines[i];
     
-    // Track #each blocks
-    if (lineText.includes("{{#each")) {
-      const match = lineText.match(/\{\{\s*#each\s+([a-zA-Z0-9_.-]+)\s*\}\}/);
-      if (match) {
-        const startIdx = lineText.indexOf(match[0]);
-        usages.push({
-          path: match[1],
-          range: new vscode.Range(i, startIdx, i, startIdx + match[0].length),
-          isUsedInEachHead: true,
-          isInEachScope: false
-        });
+    // Find all {{ ... }} blocks
+    const expressionRegex = /\{\{\s*(#?\/?[a-zA-Z0-9_.-]+(?:\s+[a-zA-Z0-9_.-]+)*)\s*\}\}/g;
+    const matches = lineText.matchAll(expressionRegex);
+
+    for (const m of matches) {
+      const fullExpression = m[1];
+      const startIdx = m.index! + (m[0].indexOf(fullExpression));
+
+      // Handle block helpers
+      if (fullExpression.startsWith("#each")) {
+        const parts = fullExpression.split(/\s+/);
+        if (parts.length > 1) {
+          const varName = parts[1];
+          const varIdx = fullExpression.indexOf(varName);
+          usages.push({
+            path: varName,
+            range: new vscode.Range(i, startIdx + varIdx, i, startIdx + varIdx + varName.length),
+            isUsedInEachHead: true,
+            isInEachScope: false
+          });
+        }
         eachScopeDepth++;
         continue;
       }
-    }
-    
-    if (lineText.includes("{{/each}}")) {
-      eachScopeDepth--;
-      continue;
-    }
 
-    // Extract regular variables
-    const matches = lineText.matchAll(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g);
-    for (const m of matches) {
-      const startIdx = m.index!;
-      usages.push({
-        path: m[1],
-        range: new vscode.Range(i, startIdx, i, startIdx + m[0].length),
-        isUsedInEachHead: false,
-        isInEachScope: eachScopeDepth > 0
-      });
+      if (fullExpression.startsWith("/each")) {
+        eachScopeDepth--;
+        continue;
+      }
+
+      // Handle other helpers and regular variables
+      // Pattern: Tokenize by space and filter out built-ins, quotes, and numbers
+      const tokens = fullExpression.replace(/[#\/]/g, "").split(/\s+/);
+      for (const token of tokens) {
+        if (!token) {
+          continue;
+        }
+        
+        // Skip built-ins, strings, and numbers
+        if (BUILT_IN_HELPERS.has(token) || token.startsWith('"') || token.startsWith("'") || /^\d+$/.test(token)) {
+          continue;
+        }
+
+        const tokenIdx = fullExpression.indexOf(token);
+        usages.push({
+          path: token,
+          range: new vscode.Range(i, startIdx + tokenIdx, i, startIdx + tokenIdx + token.length),
+          isUsedInEachHead: false,
+          isInEachScope: eachScopeDepth > 0
+        });
+      }
     }
   }
 
@@ -143,7 +169,8 @@ function resolveSchemaPath(schema: any, path: string): any {
   const parts = path.split(".");
   let current = schema;
   for (let i = 0; i < parts.length; i++) {
-    const field = current[parts[i]];
+    const part = parts[i];
+    const field = current[part];
     if (!field) {
       return undefined;
     }

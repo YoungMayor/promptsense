@@ -4,23 +4,27 @@ input:
   schema:
     blog_title: string, the title of the post
     author_name: string
-    tags(array): string, comma-separated list of tags
+    tags(array): string
     is_published?: boolean, defaults to false
-    metadata(object):
+    metadata:
+      word_count_target: integer
       seo_keywords(array): string
-      word_count_target: integer, target number of words
 ---
-# Blog Post Generator
+# Blog Post Generation
 
 Write a detailed blog post titled "{{blog_title}}" by {{author_name}}.
 
-{{#if blog_titlex}}
+{{#if blog_title}}
   The blog post should be centered around the theme of "{{blog_title}}".
 {{/if}}
 
-Key Tags: {{tags}}
+
 Target Word Count: {{metadata.word_count_target}}
 
-The SEO strategy should focus on: {{seo_keywords}}
+The SEO strategy should focus on: {{metadata.word_count_target}}
 
-Is this a published version? {{is_published}}
+{{#each metadata.seo_keywords}}
+- Use keyword: {{this}}
+{{/each}}
+
+Published Status: {{is_published}}

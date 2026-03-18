@@ -41,21 +41,31 @@ export class PromptHoverProvider implements vscode.HoverProvider {
 
     // Variable hovers in template
     if (parsed.templateRange && line >= parsed.templateRange.startLine) {
-      const wordRange = document.getWordRangeAtPosition(position);
-      const word = wordRange ? document.getText(wordRange) : "";
+      const lineText = document.lineAt(line).text;
       
-      if (!word) {
+      // Better token identification: only match within {{ ... }}
+      const match = lineText.match(/\{\{.*?\}\}/g);
+      if (!match) {
         return null;
       }
 
-      // Handle dot notation: try to find the full path if possible
-      const lineText = document.lineAt(line).text;
-      const fullPathMatch = lineText.match(new RegExp(`([a-zA-Z0-9_.-]*${word}[a-zA-Z0-9_.-]*)`));
-      const fullPath = fullPathMatch ? fullPathMatch[1] : word;
+      let foundToken = "";
+      for (const m of match) {
+        const start = lineText.indexOf(m);
+        const end = start + m.length;
+        if (position.character >= start && position.character <= end) {
+          // Inside an expression, extract the specific word under cursor
+          const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z0-9_.-]+/);
+          if (wordRange) {
+             foundToken = document.getText(wordRange);
+          }
+          break;
+        }
+      }
 
-      const field = resolveSchemaField(parsed.resolvedSchema, fullPath);
+      const field = resolveSchemaField(parsed.resolvedSchema, foundToken);
       if (field) {
-        let hoverText = `**Variable**: \`${fullPath}\`\n\n**Type**: \`${field.type}${field.isCollection ? "[]" : ""}\`${field.optional ? " (optional)" : ""}`;
+        let hoverText = `**Variable**: \`${foundToken}\`\n\n**Type**: \`${field.type}${field.isCollection ? "[]" : ""}\`${field.optional ? " (optional)" : ""}`;
         if (field.description) {
           hoverText += `\n\n---\n${field.description}`;
         }
@@ -71,7 +81,9 @@ export class PromptHoverProvider implements vscode.HoverProvider {
 }
 
 function resolveSchemaField(schema: any, path: string): any {
-  if (!schema) return undefined;
+  if (!schema || !path) {
+    return undefined;
+  }
   
   const parts = path.split(".");
   let current = schema;

@@ -1,6 +1,5 @@
 .vscode/**
 .vscode-test/**
-.private/**
 out/**
 node_modules/**
 src/**
@@ -16,8 +15,6 @@ ROADMAP.md
 vsc-extension-quickstart.md
 sample.prompt
 samples/**
-**/tsconfig.json
-**/eslint.config.mjs
-**/*.map
-**/*.ts
-**/.vscode-test.*
+# Ignore images
+resources/*.png
+!resources/logo.png

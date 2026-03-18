@@ -11,10 +11,6 @@ export type ResolvedSchema = Record<string, SchemaField>;
 
 /**
  * Parses a Picoschema-style object into a structured Internal Schema.
- * Picoschema looks like:
- *   field: string, description
- *   optional_field?: integer
- *   list(array): string
  */
 export function parsePicoschema(input: any): ResolvedSchema {
   const schema: ResolvedSchema = {};
@@ -24,17 +20,21 @@ export function parsePicoschema(input: any): ResolvedSchema {
   }
 
   for (const [key, value] of Object.entries(input)) {
-    const { cleanKey, optional } = parseKey(key);
+    const { cleanKey, optional, isCollection: keyIsCollection } = parseKey(key);
     
     if (typeof value === "string") {
-      schema[cleanKey] = parseStringDefinition(value, optional);
+      const field = parseStringDefinition(value, optional);
+      if (keyIsCollection) {
+        field.isCollection = true;
+      }
+      schema[cleanKey] = field;
     } else if (typeof value === "object" && value !== null) {
       const { type, isCollection, cleanTypeKey } = parseCollectionType(cleanKey);
       
       schema[cleanTypeKey] = {
         type: type,
-        optional: optional,
-        isCollection: isCollection,
+        optional: optional || cleanKey.endsWith("?"),
+        isCollection: isCollection || keyIsCollection,
         subFields: parsePicoschema(value),
       };
     }
@@ -43,11 +43,24 @@ export function parsePicoschema(input: any): ResolvedSchema {
   return schema;
 }
 
-function parseKey(key: string): { cleanKey: string; optional: boolean } {
-  if (key.endsWith("?")) {
-    return { cleanKey: key.slice(0, -1), optional: true };
+function parseKey(key: string): { cleanKey: string; optional: boolean; isCollection: boolean } {
+  let cleanKey = key;
+  let optional = false;
+  let isCollection = false;
+
+  if (cleanKey.endsWith("?")) {
+    cleanKey = cleanKey.slice(0, -1);
+    optional = true;
   }
-  return { cleanKey: key, optional: false };
+
+  if (cleanKey.includes("(array)")) {
+    cleanKey = cleanKey.replace("(array)", "");
+    isCollection = true;
+  } else if (cleanKey.includes("(object)")) {
+    cleanKey = cleanKey.replace("(object)", "");
+  }
+
+  return { cleanKey, optional, isCollection };
 }
 
 function parseCollectionType(key: string): { type: string; isCollection: boolean; cleanTypeKey: string } {
