@@ -26,7 +26,7 @@
       "contentName": "source.yaml",
       "patterns": [
         {
-          "match": "\\b[a-zA-Z0-9_-]+(\\?)(?=:)",
+          "match": "\\b[a-zA-Z0-9_-]+(\\?)\\s*(?=:)",
           "captures": {
             "1": {
               "name": "keyword.operator.optional.prompt"
@@ -39,9 +39,24 @@
         },
         {
           "match": ",\\s*(.*)$",
+          "name": "comment.line.picoschema.prompt",
+          "captures": {
+            "0": {
+              "name": "punctuation.definition.comment.picoschema.prompt"
+            },
+            "1": {
+              "name": "comment.line.picoschema.prompt"
+            }
+          }
+        },
+        {
+          "match": "\\b(description):\\s*(.*)$",
           "captures": {
             "1": {
-              "name": "comment.line.prompt"
+              "name": "keyword.other.json.description.prompt"
+            },
+            "2": {
+              "name": "comment.block.documentation.prompt"
             }
           }
         },
