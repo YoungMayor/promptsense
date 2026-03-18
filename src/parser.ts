@@ -1,38 +1,83 @@
-import * as YAML from "yaml";
+import * as yaml from "yaml";
 
-export interface PromptDocument {
-  config: Record<string, unknown>;
+export interface ParsedPrompt {
+  config: any;
   template: string;
   variables: string[];
+  frontmatterRange?: { startLine: number; endLine: number };
+  templateRange?: { startLine: number; endLine: number };
+  errors: Array<{ message: string; line?: number; column?: number }>;
 }
 
-export function parsePrompt(content: string): PromptDocument {
-  const parts = content.split(/^---\s*$/m);
+export function parsePrompt(content: string): ParsedPrompt {
+  const result: ParsedPrompt = {
+    config: {},
+    template: "",
+    variables: [],
+    errors: [],
+  };
 
-  let config: Record<string, unknown> = {};
-  let template = "";
+  const lines = content.split("\n");
+  const frontmatterMatches = content.match(/^---\s*$/gm);
 
-  if (parts.length >= 3) {
-    // Found frontmatter
-    const rawConfig = parts[1].trim();
-    try {
-      config = YAML.parse(rawConfig);
-    } catch (e) {
-      console.error("Failed to parse YAML frontmatter", e);
-    }
-    template = parts.slice(2).join("---").trim();
-  } else {
-    // No frontmatter found
-    template = content.trim();
+  if (!frontmatterMatches || frontmatterMatches.length < 2) {
+    result.template = content;
+    result.variables = extractVariables(content);
+    result.templateRange = { startLine: 0, endLine: lines.length - 1 };
+    return result;
   }
 
-  const variables = extractVariables(template);
+  // Find boundaries
+  const firstBoundaryIndex = content.indexOf("---");
+  const firstBoundaryEnd = content.indexOf("\n", firstBoundaryIndex) + 1;
+  const secondBoundaryIndex = content.indexOf("---", firstBoundaryEnd);
 
-  return {
-    config,
-    template,
-    variables,
+  if (secondBoundaryIndex === -1) {
+    result.template = content;
+    result.variables = extractVariables(content);
+    return result;
+  }
+
+  const secondBoundaryEnd = content.indexOf("\n", secondBoundaryIndex) + 1;
+
+  const yamlContent = content.substring(firstBoundaryEnd, secondBoundaryIndex);
+  result.template = content.substring(
+    secondBoundaryEnd === 0 ? secondBoundaryIndex + 3 : secondBoundaryEnd,
+  );
+
+  // Set ranges (0-indexed for internal use, usually match VS Code lines)
+  const firstBoundaryLine =
+    content.substring(0, firstBoundaryIndex).split("\n").length - 1;
+  const secondBoundaryLine =
+    content.substring(0, secondBoundaryIndex).split("\n").length - 1;
+
+  result.frontmatterRange = {
+    startLine: firstBoundaryLine,
+    endLine: secondBoundaryLine,
   };
+
+  result.templateRange = {
+    startLine: secondBoundaryLine + 1,
+    endLine: lines.length - 1,
+  };
+
+  try {
+    result.config = yaml.parse(yamlContent) || {};
+  } catch (err: any) {
+    // Attempt to extract line from YAML error
+    const match = err.message.match(/at line (\d+), column (\d+)/);
+    result.errors.push({
+      message: err.message,
+      line: match
+        ? Number.parseInt(match[1]) + firstBoundaryLine
+        : firstBoundaryLine + 1,
+      column: match ? Number.parseInt(match[2]) : 0,
+    });
+  }
+
+  result.variables = extractVariables(result.template);
+
+  return result;
 }
 
 function extractVariables(template: string): string[] {
