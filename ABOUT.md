@@ -1,225 +1,115 @@
-# 📄 `ABOUT.md` (AI-agent optimised)
+# 📄 PromptSense Design Specification
 
-## PromptSense
-
-**PromptSense** is a VS Code extension for `.prompt` files that provides structured authoring, validation, and intelligent tooling for AI prompt workflows.
-
-It defines and supports a **config + template format** for prompts, enabling them to be treated as structured, analyzable assets rather than raw text.
+**PromptSense** is a professional VS Code extension designed specifically for `.prompt` files. It bridges the gap between raw text and structured AI assets by providing a robust **configuration + template** authoring environment.
 
 ---
 
 ## 🧠 Core Concept
 
-A `.prompt` file is a combination of:
+A `.prompt` file is a structured document consisting of two primary layers:
 
-1. **Structured configuration (YAML-like)**
-2. **A dynamic template using variables**
+1. **Metadata Layer (Frontmatter)**: YAML-based configuration defining model parameters, schemas, and inputs.
+2. **Template Layer (Body)**: A dynamic text template utilizing variables for runtime interpolation.
 
-Example:
+### Example Structure
 
-```
+```yaml
 ---
-model: gemini
+model: gemini-2.0-flash
 input:
-  schema: User
+  schema: UserProfile
 ---
-
-Hello {{name}}
+Hello {{name}}, welcome to the PromptSense workflow.
 ```
 
-The extension must parse and understand both layers.
-
 ---
 
-## 🧬 Schema System (Critical)
+## 🧬 Pluggable Schema System
 
-PromptSense must support multiple schema definition strategies:
+PromptSense is built with extensibility in mind, supporting multiple schema strategies out of the box.
 
-### 1. JSON Schema
+### 1. JSON Schema (Standard)
 
-Inline or referenced JSON Schema objects.
+Supports both inline and external JSON Schema definitions for strict validation.
 
 ```yaml
 input:
   schema:
     type: object
     properties:
-      field1:
-        type: number
-        minimum: 20
+      field1: { type: number, minimum: 20 }
 ```
 
-### 2. Picoschema
+### 2. Picoschema (Lightweight)
 
-Lightweight schema definitions used in certain AI frameworks.
+Support for the Picoschema format commonly used in modern AI frameworks.
 
 ```yaml
 input:
   schema:
-    title: string # string, number, and boolean types are defined like this
-    subtitle?: string # optional fields are marked with a `?`
-    draft?: boolean, true when in draft state
-    status?(enum, approval status): [PENDING, APPROVED]
-    date: string, the date of publication e.g. '2024-04-09' # descriptions follow a comma
-    tags(array, relevant tags for article): string # arrays are denoted via parentheses
-    authors(array):
-        name: string
-        email?: string
-    metadata?(object): # objects are also denoted via parentheses
-        updatedAt?: string, ISO timestamp of last update
-        approvedBy?: integer, id of approver
-    extra?: any, arbitrary extra data
-    (*): string, wildcard field
+    title: string 
+    status?(enum): [PENDING, APPROVED]
+    authors(array): { name: string }
 ```
 
-### 3. Code-defined schemas (reference-based)
+### 3. Code-Defined Schemas (Reference)
 
-Schemas defined in application code and referenced by name (e.g. Genkit-style).
-
-Example:
+Seamlessly reference schemas defined within your application code (e.g., Genkit-style Zod schemas).
 
 ```typescript
-import { z } from 'genkit';
-
-const MenuItemSchema = ai.defineSchema(
-  'MenuItemSchema',
-  z.object({
-    dishname: z.string(),
-    description: z.string(),
-    calories: z.coerce.number(),
-    allergens: z.array(z.string()),
-  }),
-);
+const MenuItemSchema = ai.defineSchema("MenuItemSchema", z.object({ ... }));
 ```
 
 ```yaml
----
-model: googleai/gemini-2.5-flash-latest
 output:
   schema: MenuItemSchema
----
 ```
 
----
-
-### 🧠 Important Behaviour
-
-* The extension must **not assume a single schema system**
-* Schema resolution should be **pluggable and extensible**
-* Unknown schema types should **not break parsing**, but degrade gracefully
+> [!IMPORTANT]
+> **Behavioral Goal**: The extension does not enforce a single schema system. Resolution is pluggable, and unknown types degrade gracefully without breaking the editor experience.
 
 ---
 
-## ⚙️ Responsibilities of PromptSense
+## ⚙️ Core Responsibilities
 
-The extension must:
+The extension provides a rich developer experience (DX) through three primary layers:
 
-### 1. Parse `.prompt` structure
+### 1. Parsing & Syntax Awareness
 
-* Detect frontmatter boundaries
-* Extract configuration fields
-* Parse template content
+- **Frontmatter Detection**: Accurate boundary detection of configuration blocks.
+- **Keyword Highlighting**: Specialty colors for `model`, `schema`, `input`, etc.
+- **Variable Recognition**: Distinct styling for `{{templateVariables}}`.
 
----
+### 2. Intelligent Tooling
 
-### 2. Provide syntax awareness
+- **Smart Autocomplete**: Context-aware suggestions for model names and config keys.
+- **Variable Tracking**: Automatic extraction and tracking of variables across the file.
+- **Hover Intelligence**: Deep-dive into schema definitions and variable types directly in the editor.
 
-* Highlight keywords (`model`, `schema`, `input`, etc.)
-* Highlight template variables (`{{variable}}`)
-* Distinguish config vs template clearly
+### 3. Validation & Diagnostics
 
----
-
-### 3. Enable intelligent autocomplete
-
-* Suggest known configuration keys
-* Suggest model names (extensible list)
-* Suggest schema references where possible
-
----
-
-### 4. Detect variables
-
-* Extract all template variables (`{{name}}`)
-* Track usage across the file
-
----
-
-### 5. Validate structure
-
-* Missing required fields
-* Invalid configuration shapes
-* Conflicts between config and template
-
----
-
-### 6. Validate against schema
-
-When schema is resolvable:
-
-* Validate template variables against schema fields
-* Surface mismatches as diagnostics
-
----
-
-### 7. Provide hover intelligence
-
-* Show schema details when hovering references
-* Show variable context and inferred types
+- **Structural Integrity**: Warning for missing required fields or invalid YAML.
+- **Schema Alignment**: Real-time validation of template variables against the resolved schema.
 
 ---
 
 ## 🎯 Design Constraints
 
-* Must remain **framework-agnostic**
-* Must support **incremental enhancement** (basic → advanced features)
-* Must prioritise **developer feedback in-editor**
-* Must avoid hard dependency on external APIs
+- **Framework Agnostic**: Works with any AI runtime or framework.
+- **Incremental Enhancement**: Start with basic highlighting; unlock advanced validation as schemas are defined.
+- **Performance First**: Minimal impact on editor latency; no hard dependencies on external network APIs.
 
 ---
 
-## 🧭 Extension Behaviour Model
-
-PromptSense operates in layers:
-
-1. **Text parsing layer**
-   Understands `.prompt` file structure
-
-2. **Semantic layer**
-   Interprets config, variables, and schema relationships
-
-3. **Tooling layer**
-   Provides autocomplete, validation, and diagnostics
-
----
-
-## ⚠️ Non-Goals (Current Scope)
-
-* Executing prompts
-* Calling AI models
-* Acting as an AI runtime
+## ⚠️ Scope Boundaries
 
 PromptSense is strictly a **development-time tool**.
 
----
-
-## 🧠 Key Principle
-
-Prompts should be:
-
-* structured
-* validated
-* tool-aware
-
-PromptSense exists to enforce this.
+- **Non-Goals**: Prompt execution, model inference, or acting as an AI runtime.
+- **Primary Goal**: Ensure prompts are **Structured**, **Validated**, and **Tool-Aware**.
 
 ---
 
-## 🔍 Final instruction to AI agents
+## 🔍 Instructions for AI Agents
 
-Treat `.prompt` files as:
-
-> Structured documents with strict configuration semantics and dynamic template variables.
-
-Do not treat them as plain text.
-
+Treat `.prompt` files as **Structured Documents** with strict configuration semantics. They are not plain text; they are machine-readable assets with dynamic parts.
