@@ -1,5 +1,6 @@
 import * as yaml from "yaml";
 import { type ResolvedSchema, parsePicoschema } from "./schemas/picoschema";
+import { parseJsonSchema } from "./schemas/json-schema";
 
 export interface ParsedPrompt {
   config: any;
@@ -68,12 +69,15 @@ export function parsePrompt(content: string): ParsedPrompt {
     
     // Resolve Schema if present in input
     if (result.config.input?.schema) {
-      // For now, assume it's Picoschema if it doesn't look like JSON Schema
       const schemaInput = result.config.input.schema;
-      if (typeof schemaInput === "object" && !schemaInput.type && !schemaInput.properties) {
+      
+      // JSON Schema usually has 'type: object' at root or 'properties'
+      if (typeof schemaInput === "object" && (schemaInput.type === "object" || schemaInput.properties)) {
+        result.resolvedSchema = parseJsonSchema(schemaInput);
+      } else if (typeof schemaInput === "object") {
+        // Fallback to Picoschema for other object shapes
         result.resolvedSchema = parsePicoschema(schemaInput);
       }
-      // TODO: Add JSON Schema support in next step
     }
   } catch (err: any) {
     // Attempt to extract line from YAML error

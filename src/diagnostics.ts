@@ -52,33 +52,111 @@ export function refreshDiagnostics(
 
   // 3. Validate variables against schema
   if (parsed.resolvedSchema) {
-    const templateVariables = new Set(parsed.variables);
-    const schemaVariables = Object.keys(parsed.resolvedSchema);
+    // Extract variables with dots and handle `#each` scopes
+    const varUsages = extractVariableUsages(content, parsed.templateRange?.startLine || 0);
 
-    // Variables in template but NOT in schema
-    for (const v of parsed.variables) {
-      if (!parsed.resolvedSchema[v]) {
-        // Find the range of the variable in the text
-        const regex = new RegExp(`\\{\\{\\s*${v}\\s*\\}\\}`, "g");
-        const matches = content.matchAll(regex);
-        for (const m of matches) {
-          if (m.index !== undefined) {
-             const startPos = document.positionAt(m.index);
-             const endPos = document.positionAt(m.index + m[0].length);
-             diagnostics.push(
-               new vscode.Diagnostic(
-                 new vscode.Range(startPos, endPos),
-                 `Variable '${v}' is used in the template but not defined in the schema.`,
-                 vscode.DiagnosticSeverity.Warning
-               )
-             );
-          }
+    for (const usage of varUsages) {
+      const field = resolveSchemaPath(parsed.resolvedSchema, usage.path);
+      
+      if (!field && !usage.isInEachScope) {
+         diagnostics.push(
+           new vscode.Diagnostic(
+             usage.range,
+             `Variable '${usage.path}' is not defined in the schema.`,
+             vscode.DiagnosticSeverity.Warning
+           )
+         );
+      } else if (field) {
+        // Validation: Array used without #each
+        if (field.isCollection && !usage.isUsedInEachHead && !usage.isInEachScope) {
+           diagnostics.push(
+             new vscode.Diagnostic(
+               usage.range,
+               `Variable '${usage.path}' is an array. Use '{{#each ${usage.path}}}' to iterate over it instead of direct interpolation.`,
+               vscode.DiagnosticSeverity.Error
+             )
+           );
         }
       }
     }
   }
 
   collection.set(document.uri, diagnostics);
+}
+
+interface VariableUsage {
+  path: string;
+  range: vscode.Range;
+  isUsedInEachHead: boolean;
+  isInEachScope: boolean;
+}
+
+function extractVariableUsages(content: string, templateStartLine: number): VariableUsage[] {
+  const usages: VariableUsage[] = [];
+  const lines = content.split("\n");
+  let eachScopeDepth = 0;
+
+  for (let i = templateStartLine; i < lines.length; i++) {
+    const lineText = lines[i];
+    
+    // Track #each blocks
+    if (lineText.includes("{{#each")) {
+      const match = lineText.match(/\{\{\s*#each\s+([a-zA-Z0-9_.-]+)\s*\}\}/);
+      if (match) {
+        const startIdx = lineText.indexOf(match[0]);
+        usages.push({
+          path: match[1],
+          range: new vscode.Range(i, startIdx, i, startIdx + match[0].length),
+          isUsedInEachHead: true,
+          isInEachScope: false
+        });
+        eachScopeDepth++;
+        continue;
+      }
+    }
+    
+    if (lineText.includes("{{/each}}")) {
+      eachScopeDepth--;
+      continue;
+    }
+
+    // Extract regular variables
+    const matches = lineText.matchAll(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g);
+    for (const m of matches) {
+      const startIdx = m.index!;
+      usages.push({
+        path: m[1],
+        range: new vscode.Range(i, startIdx, i, startIdx + m[0].length),
+        isUsedInEachHead: false,
+        isInEachScope: eachScopeDepth > 0
+      });
+    }
+  }
+
+  return usages;
+}
+
+function resolveSchemaPath(schema: any, path: string): any {
+  if (!schema) {
+    return undefined;
+  }
+  const parts = path.split(".");
+  let current = schema;
+  for (let i = 0; i < parts.length; i++) {
+    const field = current[parts[i]];
+    if (!field) {
+      return undefined;
+    }
+    if (i === parts.length - 1) {
+      return field;
+    }
+    if (field.subFields) {
+      current = field.subFields;
+    } else {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 export function subscribeToDocumentChanges(

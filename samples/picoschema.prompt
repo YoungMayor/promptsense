@@ -14,8 +14,12 @@ input:
 
 Write a detailed blog post titled "{{blog_title}}" by {{author_name}}.
 
+{{#if blog_titlex}}
+  The blog post should be centered around the theme of "{{blog_title}}".
+{{/if}}
+
 Key Tags: {{tags}}
-Target Word Count: {{word_count_target}}
+Target Word Count: {{metadata.word_count_target}}
 
 The SEO strategy should focus on: {{seo_keywords}}
 
