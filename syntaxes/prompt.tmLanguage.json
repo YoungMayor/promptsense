@@ -26,10 +26,16 @@
       "contentName": "source.yaml",
       "patterns": [
         {
-          "match": "\\b[a-zA-Z0-9_-]+(\\?)\\s*(?=:)",
+          "match": "^\\s*([a-zA-Z0-9_-]+)(\\?)\\s*(:)",
           "captures": {
             "1": {
+              "name": "entity.name.tag.yaml"
+            },
+            "2": {
               "name": "keyword.operator.optional.prompt"
+            },
+            "3": {
+              "name": "punctuation.separator.key-value.yaml"
             }
           }
         },
@@ -38,14 +44,13 @@
           "name": "storage.type.prompt"
         },
         {
-          "match": ",\\s*(.*)$",
-          "name": "comment.line.picoschema.prompt",
+          "match": "(,)(.*)$",
           "captures": {
-            "0": {
-              "name": "punctuation.definition.comment.picoschema.prompt"
-            },
             "1": {
-              "name": "comment.line.picoschema.prompt"
+              "name": "punctuation.separator.picoschema.prompt"
+            },
+            "2": {
+              "name": "comment.line.prompt"
             }
           }
         },
