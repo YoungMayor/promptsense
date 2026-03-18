@@ -2,17 +2,17 @@
 
 This roadmap outlines the development stages for the PromptSense VS Code extension.
 
-## 🛠 Phase 1: Foundations (Current)
+## ✅ Phase 1: Foundations
 
-- [ ] **Basic Parsing**: Robust detection of frontmatter and template boundaries.
-- [ ] **Syntax Highlighting**: Basic colorization for `.prompt` files (YAML frontmatter + Handlebars-style variables).
-- [ ] **Extension Scaffolding**: Setup project structure, linting (Biome), and build pipeline.
+- [x] **Basic Parsing**: Robust detection of frontmatter and template boundaries.
+- [x] **Syntax Highlighting**: Basic colorization for `.prompt` files (YAML frontmatter + Handlebars-style variables).
+- [x] **Extension Scaffolding**: Setup project structure, linting (Biome), and build pipeline.
 
-## 🧠 Phase 2: Intelligence & Diagnostics
+## ✅ Phase 2: Intelligence & Diagnostics
 
-- [ ] **Variable Extraction**: Automatically identify all `{{variables}}` in the template.
-- [ ] **Basic Validation**: Ensure required frontmatter fields are present.
-- [ ] **Autocomplete**: Basic completion for top-level frontmatter keys (`model`, `input`, `output`).
+- [x] **Variable Extraction**: Automatically identify all `{{variables}}` in the template.
+- [x] **Basic Validation**: Ensure required frontmatter fields are present.
+- [x] **Autocomplete**: Basic completion for top-level frontmatter keys (`model`, `input`, `output`).
 
 ```yaml
 ---

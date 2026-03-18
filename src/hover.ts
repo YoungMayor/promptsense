@@ -38,6 +38,21 @@ export class PromptHoverProvider implements vscode.HoverProvider {
           ),
         );
       }
+
+      // Variable hovers in template
+      if (line >= parsed.templateRange?.startLine!) {
+        const field = parsed.resolvedSchema?.[word];
+        if (field) {
+          let hoverText = `**Variable**: \`${word}\`\n\n**Type**: \`${field.type}${field.isCollection ? "[]" : ""}\`${field.optional ? " (optional)" : ""}`;
+          if (field.description) {
+            hoverText += `\n\n---\n${field.description}`;
+          }
+          if (field.enumValues) {
+            hoverText += `\n\n**Enums**: \`${field.enumValues.join(", ")}\``;
+          }
+          return new vscode.Hover(new vscode.MarkdownString(hoverText));
+        }
+      }
     }
 
     return null;

@@ -50,6 +50,34 @@ export function refreshDiagnostics(
     }
   }
 
+  // 3. Validate variables against schema
+  if (parsed.resolvedSchema) {
+    const templateVariables = new Set(parsed.variables);
+    const schemaVariables = Object.keys(parsed.resolvedSchema);
+
+    // Variables in template but NOT in schema
+    for (const v of parsed.variables) {
+      if (!parsed.resolvedSchema[v]) {
+        // Find the range of the variable in the text
+        const regex = new RegExp(`\\{\\{\\s*${v}\\s*\\}\\}`, "g");
+        const matches = content.matchAll(regex);
+        for (const m of matches) {
+          if (m.index !== undefined) {
+             const startPos = document.positionAt(m.index);
+             const endPos = document.positionAt(m.index + m[0].length);
+             diagnostics.push(
+               new vscode.Diagnostic(
+                 new vscode.Range(startPos, endPos),
+                 `Variable '${v}' is used in the template but not defined in the schema.`,
+                 vscode.DiagnosticSeverity.Warning
+               )
+             );
+          }
+        }
+      }
+    }
+  }
+
   collection.set(document.uri, diagnostics);
 }
 

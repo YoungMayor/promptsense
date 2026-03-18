@@ -1,9 +1,11 @@
 import * as yaml from "yaml";
+import { type ResolvedSchema, parsePicoschema } from "./schemas/picoschema";
 
 export interface ParsedPrompt {
   config: any;
   template: string;
   variables: string[];
+  resolvedSchema?: ResolvedSchema;
   frontmatterRange?: { startLine: number; endLine: number };
   templateRange?: { startLine: number; endLine: number };
   errors: Array<{ message: string; line?: number; column?: number }>;
@@ -63,6 +65,16 @@ export function parsePrompt(content: string): ParsedPrompt {
 
   try {
     result.config = yaml.parse(yamlContent) || {};
+    
+    // Resolve Schema if present in input
+    if (result.config.input?.schema) {
+      // For now, assume it's Picoschema if it doesn't look like JSON Schema
+      const schemaInput = result.config.input.schema;
+      if (typeof schemaInput === "object" && !schemaInput.type && !schemaInput.properties) {
+        result.resolvedSchema = parsePicoschema(schemaInput);
+      }
+      // TODO: Add JSON Schema support in next step
+    }
   } catch (err: any) {
     // Attempt to extract line from YAML error
     const match = err.message.match(/at line (\d+), column (\d+)/);
