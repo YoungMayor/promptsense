@@ -2,7 +2,7 @@
   "name": "promptsense",
   "displayName": "PromptSense",
   "description": "Smart tooling for .prompt files - syntax highlighting, autocomplete, and validation for modern AI workflows.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.110.0"
   },
