@@ -1,14 +1,23 @@
 {
   "name": "promptsense",
   "displayName": "PromptSense",
-  "description": "Smart tooling for .prompt files — syntax highlighting, autocomplete, and validation for modern AI workflows.",
+  "description": "Smart tooling for .prompt files - syntax highlighting, autocomplete, and validation for modern AI workflows.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.110.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Linters"
   ],
+  "keywords": [
+    "prompt",
+    "ai",
+    "llm",
+    "handlebars",
+    "picoschema"
+  ],
+  "icon": "resources/logo.png",
   "activationEvents": [],
   "main": "./dist/extension.js",
   "repository": "https://github.com/YoungMayor/promptsense",
@@ -17,6 +26,7 @@
     "email": "youngmayor.dev@gmail.com",
     "url": "https://aghogho.mayrlabs.com"
   },
+  "publisher": "mayrlabs",
   "contributes": {
     "languages": [
       {
