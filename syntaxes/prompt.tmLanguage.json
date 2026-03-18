@@ -26,6 +26,37 @@
       "contentName": "source.yaml",
       "patterns": [
         {
+          "match": "\\b[a-zA-Z0-9_-]+(\\?)(?=:)",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.optional.prompt"
+            }
+          }
+        },
+        {
+          "match": "\\((array|object)\\)",
+          "name": "storage.type.prompt"
+        },
+        {
+          "match": ",\\s*(.*)$",
+          "captures": {
+            "1": {
+              "name": "comment.line.prompt"
+            }
+          }
+        },
+        {
+          "begin": "\"description\":\\s*\"",
+          "end": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.other.json.description.prompt"
+            }
+          },
+          "contentName": "string.quoted.double.description.prompt",
+          "name": "comment.block.documentation.prompt"
+        },
+        {
           "include": "source.yaml"
         }
       ]

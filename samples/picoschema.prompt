@@ -4,11 +4,11 @@ input:
   schema:
     blog_title: string, the title of the post
     author_name: string
-    tags(array): string
+    tags(array): string, comma-separated list of tags
     is_published?: boolean, defaults to false
     metadata(object):
       seo_keywords(array): string
-      word_count_target: integer
+      word_count_target: integer, target number of words
 ---
 # Blog Post Generator
 
