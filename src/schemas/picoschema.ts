@@ -20,7 +20,17 @@ export function parsePicoschema(input: any): ResolvedSchema {
   }
 
   for (const [key, value] of Object.entries(input)) {
-    const { cleanKey, optional, isCollection: keyIsCollection } = parseKey(key);
+    const { cleanKey, optional, isCollection: keyIsCollection, isEnum: keyIsEnum } = parseKey(key);
+    
+    if (keyIsEnum && Array.isArray(value)) {
+      schema[cleanKey] = {
+        type: "enum",
+        optional,
+        isCollection: false,
+        enumValues: value.map(v => String(v)),
+      };
+      continue;
+    }
 
     if (typeof value === "string") {
       const field = parseStringDefinition(value, optional);
@@ -29,14 +39,13 @@ export function parsePicoschema(input: any): ResolvedSchema {
       }
       schema[cleanKey] = field;
     } else if (typeof value === "object" && value !== null) {
-      const { type, isCollection, cleanTypeKey } =
-        parseCollectionType(cleanKey);
-
+      const { type, isCollection, cleanTypeKey } = parseCollectionType(cleanKey);
+      
       schema[cleanTypeKey] = {
         type: type,
         optional: optional || cleanKey.endsWith("?"),
         isCollection: isCollection || keyIsCollection,
-        subFields: parsePicoschema(value),
+        subFields: Array.isArray(value) ? undefined : parsePicoschema(value),
       };
     }
   }
@@ -44,14 +53,11 @@ export function parsePicoschema(input: any): ResolvedSchema {
   return schema;
 }
 
-function parseKey(key: string): {
-  cleanKey: string;
-  optional: boolean;
-  isCollection: boolean;
-} {
+function parseKey(key: string): { cleanKey: string; optional: boolean; isCollection: boolean; isEnum: boolean } {
   let cleanKey = key;
   let optional = false;
   let isCollection = false;
+  let isEnum = false;
 
   if (cleanKey.endsWith("?")) {
     cleanKey = cleanKey.slice(0, -1);
@@ -63,28 +69,28 @@ function parseKey(key: string): {
     isCollection = true;
   } else if (cleanKey.includes("(object)")) {
     cleanKey = cleanKey.replace("(object)", "");
+  } else if (cleanKey.includes("(enum)")) {
+    cleanKey = cleanKey.replace("(enum)", "");
+    isEnum = true;
   }
 
-  return { cleanKey, optional, isCollection };
+  return { cleanKey, optional, isCollection, isEnum };
 }
 
-function parseCollectionType(key: string): {
-  type: string;
-  isCollection: boolean;
-  cleanTypeKey: string;
-} {
+function parseCollectionType(key: string): { type: string; isCollection: boolean; cleanTypeKey: string } {
   const arrayMatch = key.match(/(.*)\(array\)$/);
   if (arrayMatch) {
     return { type: "array", isCollection: true, cleanTypeKey: arrayMatch[1] };
   }
-
+  
   const objectMatch = key.match(/(.*)\(object\)$/);
   if (objectMatch) {
-    return {
-      type: "object",
-      isCollection: false,
-      cleanTypeKey: objectMatch[1],
-    };
+    return { type: "object", isCollection: false, cleanTypeKey: objectMatch[1] };
+  }
+
+  const enumMatch = key.match(/(.*)\(enum\)$/);
+  if (enumMatch) {
+     return { type: "enum", isCollection: false, cleanTypeKey: enumMatch[1] };
   }
 
   return { type: "object", isCollection: false, cleanTypeKey: key };
@@ -92,7 +98,7 @@ function parseCollectionType(key: string): {
 
 function parseStringDefinition(def: string, optional: boolean): SchemaField {
   // Pattern: "type, description"
-  const parts = def.split(",").map((p) => p.trim());
+  const parts = def.split(",").map(p => p.trim());
   const typePart = parts[0];
   const description = parts.length > 1 ? parts.slice(1).join(", ") : undefined;
 
@@ -104,7 +110,7 @@ function parseStringDefinition(def: string, optional: boolean): SchemaField {
       optional,
       isCollection: false,
       description,
-      enumValues: enumMatch[1].split(",").map((e) => e.trim()),
+      enumValues: enumMatch[1].split(",").map(e => e.trim()),
     };
   }
 

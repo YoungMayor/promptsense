@@ -16,7 +16,8 @@ input:
         minimum: 1
         maximum: 5
         description: "Urgency level from 1 (low) to 5 (critical)"
-      history(array):
+      history:
+        type: array
         items:
           type: object
           properties:
